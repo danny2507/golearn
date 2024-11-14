@@ -18,12 +18,12 @@ CREATE TABLE products (
 );
 
 
--- Insert mock users
+-- Insert mock users, all password 12345678
 INSERT INTO users (username, email, password)
 VALUES
-    ('alice', 'alice@example.com', 'password123'),
-    ('bob', 'bob@example.com', 'password123'),
-    ('charlie', 'charlie@example.com', 'password123');
+    ('alice', 'alice@example.com', '$2a$10$pD8kOZPLyA7.b7/Afd1sRedxQzT8v.PJrRNJc4pKwEKI.SvM8LzkW'),
+    ('bob', 'bob@example.com', '$2a$10$pD8kOZPLyA7.b7/Afd1sRedxQzT8v.PJrRNJc4pKwEKI.SvM8LzkW'),
+    ('charlie', 'charlie@example.com', '$2a$10$pD8kOZPLyA7.b7/Afd1sRedxQzT8v.PJrRNJc4pKwEKI.SvM8LzkW');
 
 -- Insert mock products, associating them with users by user_id
 INSERT INTO products (name, description, price, user_id)

@@ -146,3 +146,36 @@ func DeleteProduct(id int) error {
 	}
 	return nil
 }
+
+// login helper
+func LoginUser(email, password string) (int, error) {
+	var userID int
+	var hashedPassword string
+
+	err := db.QueryRow("SELECT id, password FROM users WHERE email = $1", email).Scan(&userID, &hashedPassword)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, fmt.Errorf("username/password invalid")
+		}
+		return 0, fmt.Errorf("error retrieving information: %v", err)
+	}
+
+	// Use verifyPasswordHash to check the password
+	if !VerifyPasswordHash(password, hashedPassword) {
+		return 0, fmt.Errorf("username/password invalid")
+	}
+
+	return userID, nil
+}
+
+// reg helper
+func RegisterUser(username, email, password string) error {
+	hashedPassword := HashPassword(password)
+	_, err := db.Exec(`
+		INSERT INTO users (username, email, password)
+		VALUES ($1, $2, $3)`, username, email, hashedPassword)
+	if err != nil {
+		return fmt.Errorf("could not insert user: %v", err)
+	}
+	return nil
+}

@@ -1,19 +1,32 @@
+// hello.go
 package main
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 	"github.com/joho/godotenv"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
+	"time"
 )
+
+type JWTClaims struct {
+	UserID int `json:"user_id"`
+	jwt.StandardClaims
+}
+
+var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
 func main() {
 	// Load environment variables from .env file
 	if err := godotenv.Load(); err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
+
 	InitDB()
+	// Close db when finish
 	defer CloseDB()
 
 	r := gin.Default()
@@ -22,18 +35,20 @@ func main() {
 	r.GET("/login", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "login.html", nil)
 	})
-	r.POST("/login", func(c *gin.Context) {
-		username := c.PostForm("username")
-		c.SetCookie("user", username, 3600, "/", "localhost", false, true)
-		c.Redirect(http.StatusFound, "/")
-	})
 
-	// Product API Endpoints
-	r.GET("/products", listProducts)
-	r.GET("/products/:id", getProduct)
-	r.POST("/products", addProduct)
-	r.PUT("/products/:id", updateProduct)
-	r.DELETE("/products/:id", deleteProduct)
+	// protect routes
+	authorized := r.Group("/")
+	authorized.Use(AuthMiddleware())
+	{
+		authorized.GET("/products", listProducts)
+		authorized.GET("/products/:id", getProduct)
+		authorized.POST("/products", addProduct)
+		authorized.PUT("/products/:id", updateProduct)
+		authorized.DELETE("/products/:id", deleteProduct)
+	}
+	// user API endpoints
+	r.POST("/login", login)
+	r.POST("/register", register)
 
 	r.GET("/", func(c *gin.Context) {
 		username, err := c.Cookie("user")
@@ -126,4 +141,52 @@ func deleteProduct(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "product deleted"})
+}
+
+// login - Login by email & password
+func login(c *gin.Context) {
+	var requestData LoginRequestData
+	if err := c.ShouldBindJSON(&requestData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing email/password"})
+		return
+	}
+	email := requestData.Email
+	password := requestData.Password
+	userID, err := LoginUser(email, password)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Generate JWT token
+	expirationTime := time.Now().Add(24 * time.Hour)
+	claims := &JWTClaims{
+		UserID: userID,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expirationTime.Unix(),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(jwtSecret)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
+		return
+	}
+
+	// Return the token
+	c.JSON(http.StatusOK, gin.H{"token": tokenString})
+}
+
+func register(c *gin.Context) {
+	var requestData RegisterRequestData
+	if err := c.ShouldBindJSON(&requestData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+	err := RegisterUser(requestData.Username, requestData.Email, requestData.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "User registered"})
 }
