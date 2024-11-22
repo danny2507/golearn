@@ -5,6 +5,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"github.com/joho/godotenv"
+	"golearn/config"
+	"golearn/models"
+	"golearn/services"
+	"gorm.io/gorm"
 	"log"
 	"net/http"
 	"os"
@@ -17,6 +21,7 @@ type JWTClaims struct {
 	jwt.StandardClaims
 }
 
+var db *gorm.DB
 var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
 func main() {
@@ -25,9 +30,16 @@ func main() {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
-	InitDB()
-	// Close db when finish
-	defer CloseDB()
+	db = config.InitDB()
+	defer func() {
+		sqlDB, _ := db.DB()
+		if sqlDB != nil {
+			sqlDB.Close()
+		}
+	}()
+
+	// Auto-migrate models
+	db.AutoMigrate(&models.User{}, &models.Product{})
 
 	r := gin.Default()
 	r.LoadHTMLGlob("templates/*")
@@ -72,7 +84,7 @@ func main() {
 
 // listProducts - List all products
 func listProducts(c *gin.Context) {
-	products, err := ListProducts()
+	products, err := services.ListProducts(db)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not retrieve products"})
 		return
@@ -87,7 +99,7 @@ func getProduct(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product ID"})
 		return
 	}
-	product, err := GetProduct(id)
+	product, err := services.GetProduct(db, id)
 	if err != nil || product == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
 		return
@@ -102,7 +114,7 @@ func addProduct(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
-	productID, err := AddProduct(product.Name, product.Description, product.Price, product.UserID)
+	productID, err := services.AddProduct(db, product.Name, product.Description, product.Price, product.UserID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not add product"})
 		return
@@ -122,7 +134,7 @@ func updateProduct(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
-	if err := UpdateProduct(id, product.Name, product.Description, product.Price); err != nil {
+	if err := services.UpdateProduct(db, id, product.Name, product.Description, product.Price); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not update product"})
 		return
 	}
@@ -136,7 +148,7 @@ func deleteProduct(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product ID"})
 		return
 	}
-	if err := DeleteProduct(id); err != nil {
+	if err := services.DeleteProduct(db, id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not delete product"})
 		return
 	}
@@ -152,7 +164,7 @@ func login(c *gin.Context) {
 	}
 	email := requestData.Email
 	password := requestData.Password
-	userID, err := LoginUser(email, password)
+	userID, err := services.LoginUser(db, email, password)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -183,7 +195,7 @@ func register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
-	err := RegisterUser(requestData.Username, requestData.Email, requestData.Password)
+	err := services.RegisterUser(db, requestData.Username, requestData.Email, requestData.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
