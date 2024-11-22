@@ -97,7 +97,7 @@ func getProduct(c *gin.Context) {
 
 // addProduct - Add a new product
 func addProduct(c *gin.Context) {
-	var product Product
+	var product ProductData
 	if err := c.ShouldBindJSON(&product); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
@@ -117,7 +117,7 @@ func updateProduct(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product ID"})
 		return
 	}
-	var product Product
+	var product ProductData
 	if err := c.ShouldBindJSON(&product); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return

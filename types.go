@@ -1,13 +1,13 @@
 package main
 
-type Product struct {
+type ProductData struct {
 	ID          int     `json:"id"`
 	Name        string  `json:"name"`
 	Description string  `json:"description"`
 	Price       float64 `json:"price"`
 	UserID      int     `json:"user_id"`
 }
-type User struct {
+type UserData struct {
 	ID        int    `json:"id"`
 	Username  string `json:"username"`
 	Email     string `json:"email"`
