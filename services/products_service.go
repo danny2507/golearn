@@ -33,7 +33,6 @@ func GetProduct(db *gorm.DB, id int) (*models.Product, error) {
 	return &product, nil
 }
 
-// ListProducts retrieves all products from the database
 func ListProducts(db *gorm.DB) ([]models.Product, error) {
 	var products []models.Product
 	result := db.Find(&products)

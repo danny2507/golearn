@@ -6,6 +6,7 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/joho/godotenv"
 	"golearn/config"
+	"golearn/controllers"
 	"golearn/models"
 	"golearn/services"
 	"gorm.io/gorm"
@@ -13,7 +14,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 )
 
 type JWTClaims struct {
@@ -37,7 +37,9 @@ func main() {
 			sqlDB.Close()
 		}
 	}()
-
+	// Initialize services and controllers
+	userService := services.NewUserService(db)
+	userController := controllers.NewUserController(userService)
 	// Auto-migrate models
 	db.AutoMigrate(&models.User{}, &models.Product{})
 
@@ -57,10 +59,14 @@ func main() {
 		authorized.POST("/products", addProduct)
 		authorized.PUT("/products/:id", updateProduct)
 		authorized.DELETE("/products/:id", deleteProduct)
+
 	}
 	// user API endpoints
-	r.POST("/login", login)
-	r.POST("/register", register)
+	userRoutes := r.Group("/users")
+	{
+		userRoutes.POST("/register", userController.Register)
+		userRoutes.POST("/login", userController.Login)
+	}
 
 	r.GET("/", func(c *gin.Context) {
 		username, err := c.Cookie("user")
@@ -82,7 +88,6 @@ func main() {
 
 // Handler functions
 
-// listProducts - List all products
 func listProducts(c *gin.Context) {
 	products, err := services.ListProducts(db)
 	if err != nil {
@@ -92,7 +97,6 @@ func listProducts(c *gin.Context) {
 	c.JSON(http.StatusOK, products)
 }
 
-// getProduct - Get a product by ID
 func getProduct(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -107,7 +111,6 @@ func getProduct(c *gin.Context) {
 	c.JSON(http.StatusOK, product)
 }
 
-// addProduct - Add a new product
 func addProduct(c *gin.Context) {
 	var product ProductData
 	if err := c.ShouldBindJSON(&product); err != nil {
@@ -122,7 +125,6 @@ func addProduct(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"id": productID})
 }
 
-// updateProduct - Update an existing product
 func updateProduct(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -141,7 +143,6 @@ func updateProduct(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "product updated"})
 }
 
-// deleteProduct - Delete a product by ID
 func deleteProduct(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -153,52 +154,4 @@ func deleteProduct(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "product deleted"})
-}
-
-// login - Login by email & password
-func login(c *gin.Context) {
-	var requestData LoginRequestData
-	if err := c.ShouldBindJSON(&requestData); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing email/password"})
-		return
-	}
-	email := requestData.Email
-	password := requestData.Password
-	userID, err := services.LoginUser(db, email, password)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Generate JWT token
-	expirationTime := time.Now().Add(24 * time.Hour)
-	claims := &JWTClaims{
-		UserID: userID,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: expirationTime.Unix(),
-		},
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(jwtSecret)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
-		return
-	}
-
-	// Return the token
-	c.JSON(http.StatusOK, gin.H{"token": tokenString})
-}
-
-func register(c *gin.Context) {
-	var requestData RegisterRequestData
-	if err := c.ShouldBindJSON(&requestData); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
-		return
-	}
-	err := services.RegisterUser(db, requestData.Username, requestData.Email, requestData.Password)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"status": "User registered"})
 }
