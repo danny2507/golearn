@@ -3,7 +3,7 @@ package controllers
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
-	"golearn/services"
+	"golearn/users/services"
 	"net/http"
 	"os"
 	"time"

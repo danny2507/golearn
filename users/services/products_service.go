@@ -3,7 +3,7 @@ package services
 import (
 	"errors"
 
-	"golearn/models"
+	"golearn/users/models"
 	"gorm.io/gorm"
 )
 
