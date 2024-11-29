@@ -1,7 +1,7 @@
 package services
 
 import (
-	"golearn/product/models"
+	"golearn/users/models"
 	"gorm.io/gorm"
 )
 

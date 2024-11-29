@@ -6,7 +6,8 @@ import (
 )
 
 type Controller struct {
-	PostgreService *services.PostgreService
+	PostgreService       *services.PostgreService
+	SharedPostgreService *services.SharedPostgreService
 }
 
 func NewController(db *gorm.DB) *Controller {

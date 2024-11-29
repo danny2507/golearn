@@ -17,15 +17,16 @@ type JWTClaims struct {
 var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
 type UserController struct {
-	UserService *services.UserService
+	UserService          *services.UserService
+	SharedPostgreService *services.SharedPostgreService
 }
 
-func NewUserController(userService *services.UserService) *UserController {
+func NewUserController(userService *services.UserService, sharedPostgreService *services.SharedPostgreService) *UserController {
 	return &UserController{
-		UserService: userService,
+		UserService:          userService,
+		SharedPostgreService: sharedPostgreService,
 	}
 }
-
 func (u *UserController) Register(c *gin.Context) {
 	var requestData RegisterRequestData
 	if err := c.ShouldBindJSON(&requestData); err != nil {
@@ -67,6 +68,6 @@ func (u *UserController) Login(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
 		return
 	}
-
+	u.SharedPostgreService.AddActiveToken(tokenString)
 	c.JSON(http.StatusOK, gin.H{"token": tokenString})
 }

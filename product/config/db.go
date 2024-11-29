@@ -62,3 +62,22 @@ func insertMockData(db *gorm.DB) {
 
 	log.Println("Mock data inserted successfully.")
 }
+func InitSharedDB() *gorm.DB {
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		os.Getenv("SHARED_DB_HOST"),
+		os.Getenv("SHARED_DB_PORT"),
+		os.Getenv("SHARED_DB_USER"),
+		os.Getenv("SHARED_DB_PASSWORD"),
+		os.Getenv("SHARED_DB_NAME"))
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatalf("Failed to connect to shared database: %v", err)
+	}
+
+	// Auto-migrate ensures schema matches the models
+	db.AutoMigrate(&models.ActiveToken{})
+
+	log.Println("Shared Database connected and initialized successfully.")
+	return db
+}
