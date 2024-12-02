@@ -6,6 +6,7 @@ require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/joho/godotenv v1.5.1
+	github.com/kelseyhightower/envconfig v1.4.0
 	golang.org/x/crypto v0.29.0
 	gorm.io/driver/postgres v1.5.10
 	gorm.io/gorm v1.25.12

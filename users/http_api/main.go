@@ -4,8 +4,8 @@ package http_api
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"golearn/product/config"
-	"golearn/product/http_api/controllers"
+	"golearn/users/config"
+	"golearn/users/http_api/controllers"
 	"gorm.io/gorm"
 	"log"
 	"net/http"

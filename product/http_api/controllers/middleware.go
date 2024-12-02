@@ -4,7 +4,6 @@ package controllers
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
-	"golearn/product/config"
 	"net/http"
 	"os"
 	"strings"
@@ -38,14 +37,8 @@ func (ctrl *Controller) AuthMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		sdb := config.InitSharedDB()
-		defer func() {
-			sqlDB, _ := sdb.DB()
-			if sqlDB != nil {
-				sqlDB.Close()
-			}
-		}()
-		_, err = ctrl.SharedPostgreService.GetActiveToken(tokenString)
+
+		_, err = ctrl.PostgreService.GetActiveToken(tokenString)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token on db"})
 			c.Abort()

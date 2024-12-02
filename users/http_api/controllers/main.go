@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	"golearn/product/config"
-	"golearn/product/services"
+	"golearn/users/config"
+	"golearn/users/services"
 )
 
 type Controller struct {

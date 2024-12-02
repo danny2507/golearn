@@ -6,7 +6,7 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/joho/godotenv"
 	"golearn/users/config"
-	"golearn/users/controllers"
+	"golearn/users/http_api/controllers"
 	"golearn/users/models"
 	"golearn/users/services"
 	"gorm.io/gorm"
