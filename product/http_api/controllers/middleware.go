@@ -4,6 +4,7 @@ package controllers
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
+	"golearn/product/config"
 	"net/http"
 	"os"
 	"strings"
@@ -17,7 +18,7 @@ type JWTClaims struct {
 var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
 // AuthMiddleware checks authentication
-func AuthMiddleware() gin.HandlerFunc {
+func (ctrl *Controller) AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// get the token from the Authorization header
 		authHeader := c.GetHeader("Authorization")
@@ -37,7 +38,19 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-
+		sdb := config.InitSharedDB()
+		defer func() {
+			sqlDB, _ := sdb.DB()
+			if sqlDB != nil {
+				sqlDB.Close()
+			}
+		}()
+		_, err = ctrl.SharedPostgreService.GetActiveToken(tokenString)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token on db"})
+			c.Abort()
+			return
+		}
 		// get userid from token claim
 		claims, ok := token.Claims.(*JWTClaims)
 		if !ok {

@@ -9,6 +9,9 @@ type SharedPostgreService struct {
 	Db *gorm.DB
 }
 
+func NewSharedPostgreService(db *gorm.DB) *SharedPostgreService {
+	return &SharedPostgreService{Db: db}
+}
 func (sps *SharedPostgreService) GetActiveToken(token string) (*models.ActiveToken, error) {
 	var activeToken models.ActiveToken
 	result := sps.Db.Where(&models.ActiveToken{Token: token}).First(&activeToken)

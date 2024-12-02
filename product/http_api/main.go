@@ -40,7 +40,7 @@ func Start() {
 
 	// protect routes
 	authorized := r.Group("/")
-
+	authorized.Use(controllers.AuthMiddleware())
 	{
 		authorized.GET("/products", ctrl.ListProducts)
 		authorized.GET("/products/:id", ctrl.GetProduct)
@@ -49,7 +49,6 @@ func Start() {
 		authorized.DELETE("/products/:id", ctrl.DeleteProduct)
 
 	}
-	authorized.Use(controllers.AuthMiddleware())
 	r.Run() // listen and serve on 0.0.0.0:8080
 }
 
