@@ -43,6 +43,7 @@ func NewPostgreService(config *config.Config) *PostgreService {
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
+	sdb.AutoMigrate(&models.ActiveToken{})
 	log.Println("Database connected and initialized successfully.")
 
 	return &PostgreService{Db: db, Sdb: sdb}
@@ -79,4 +80,20 @@ func (s *PostgreService) LoginUser(email, password string) (int, error) {
 	}
 
 	return int(user.ID), nil
+}
+func (sps *PostgreService) GetActiveToken(token string) (*models.ActiveToken, error) {
+	var activeToken models.ActiveToken
+	result := sps.Sdb.Where(&models.ActiveToken{Token: token}).First(&activeToken)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &activeToken, nil
+}
+func (sps *PostgreService) AddActiveToken(token string) (*models.ActiveToken, error) {
+	tokenRecord := &models.ActiveToken{Token: token}
+	result := sps.Sdb.Create(tokenRecord)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return tokenRecord, nil
 }

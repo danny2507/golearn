@@ -30,17 +30,12 @@ func Start() {
 	})
 
 	// protect routes
-	authorized := r.Group("/")
-	authorized.Use(ctrl.AuthMiddleware())
+	userRoutes := r.Group("/users")
 	{
-		authorized.GET("/products", ctrl.ListProducts)
-		authorized.GET("/products/:id", ctrl.GetProduct)
-		authorized.POST("/products", ctrl.AddProduct)
-		authorized.PUT("/products/:id", ctrl.UpdateProduct)
-		authorized.DELETE("/products/:id", ctrl.DeleteProduct)
-
+		userRoutes.POST("/register", ctrl.Register)
+		userRoutes.POST("/login", ctrl.Login)
 	}
-	r.Run() // listen and serve on 0.0.0.0:8080
+	r.Run(":8081") // listen and serve on 0.0.0.0:8080
 }
 
 //

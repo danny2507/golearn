@@ -42,6 +42,8 @@ func NewPostgreService(config *config.Config) *PostgreService {
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
+	sdb.AutoMigrate(&models.ActiveToken{})
+
 	log.Println("Database connected and initialized successfully.")
 
 	return &PostgreService{Db: db, Sdb: sdb}
